@@ -1,38 +1,7 @@
 [
   {
-    "key": "WAL-1J3NMPKK9W",
-    "dur": 20,
-    "tgl": "13/1/2026, 16.22.38",
-    "tgl_raw": 1768296158079
-  },
-  {
-    "key": "WAL-BH3J7S0P",
-    "dur": 2,
-    "tgl_raw": 1768297203792
-  },
-  {
-    "key": "WAL-JSKZI3A7",
-    "dur": 20,
-    "tgl_raw": 1768297629053
-  },
-  {
-    "key": "WAL-7V9HGB5G",
-    "dur": 2,
-    "tgl_raw": 1768297821154
-  },
-  {
-    "key": "WAL-AINPCQSN",
-    "dur": 1,
-    "tgl_raw": 1768298047589
-  },
-  {
-    "key": "WAL-RKWWYR0Q",
-    "dur": 1,
-    "tgl_raw": 1768298067635
-  },
-  {
-    "key": "WAL-AF2FDTUY",
-    "dur": 999999,
-    "tgl_raw": 1768298251777
+    "key": "WAL-QXG7MYF",
+    "dur": 30,
+    "tgl_raw": 1768299670111
   }
 ]
