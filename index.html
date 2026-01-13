@@ -3,103 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAL ADMIN PANEL STABLE</title>
+    <title>WAL ADMIN PANEL V3.0</title>
     <style>
         :root { --violet: #8b5cf6; --cyan: #06b6d4; --dark: #0f172a; --white: #f8fafc; --red: #ef4444; }
-        body { background: var(--dark); color: var(--white); font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .container { width: 100%; max-width: 450px; background: #1e293b; border: 2px solid var(--violet); border-radius: 15px; padding: 20px; text-align: center; }
-        .btn { display: block; width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; }
+        body { background: var(--dark); color: var(--white); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box; }
+        .container { width: 100%; max-width: 500px; background: #1e293b; border: 2px solid var(--violet); border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+        .btn { display: block; width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; text-transform: uppercase; }
         .btn-violet { background: var(--violet); }
         .btn-cyan { background: var(--cyan); }
-        input { width: 100%; padding: 10px; margin-top: 5px; background: #0f172a; border: 1px solid var(--violet); color: white; border-radius: 8px; box-sizing: border-box; }
-        .status { font-size: 0.8rem; margin: 10px 0; padding: 10px; border-radius: 8px; background: #334155; }
+        .btn-red { background: var(--red); }
+        .status { font-size: 0.9rem; margin: 10px 0; padding: 10px; border-radius: 8px; background: #334155; border-left: 5px solid var(--violet); }
+        input { width: 100%; padding: 12px; margin-top: 5px; background: #0f172a; border: 1px solid var(--violet); color: white; border-radius: 8px; box-sizing: border-box; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 0.8rem; }
         th, td { border: 1px solid #334155; padding: 8px; text-align: left; }
+        th { background: var(--violet); }
+        .del-btn { background: var(--red); color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="color: var(--violet);">WAL ADMIN PANEL</h2>
+    <h2 style="color: var(--violet); margin-bottom: 5px;">WAL ADMIN PANEL</h2>
+    <p style="font-size: 0.7rem; color: var(--cyan); margin-top: 0;">AUTO-SYNC DATABASE SYSTEM</p>
+    
     <div id="sync-status" class="status">Status: Ready</div>
     
-    <input type="password" id="gh-token" placeholder="Paste GitHub Token (ghp_...)">
-    
+    <div style="text-align: left; margin-bottom: 15px;">
+        <label style="font-size: 0.8rem;">GitHub Token:</label>
+        <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" onchange="saveToken()">
+    </div>
+
     <button class="btn btn-violet" onclick="createKey()">+ CREATE NEW KEY</button>
     <button class="btn btn-cyan" onclick="autoSync()">SINKRON KE GITHUB</button>
-
-    <table>
-        <thead><tr><th>KEY</th><th>DUR</th><th>AKSI</th></tr></thead>
-        <tbody id="key-table-body"></tbody>
-    </table>
+    
+    <h3 style="text-align: left; border-bottom: 1px solid var(--violet); padding-bottom: 5px;">Key Database:</h3>
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>KEY</th>
+                    <th>DUR</th>
+                    <th>AKSI</th>
+                </tr>
+            </thead>
+            <tbody id="key-table-body">
+                </tbody>
+        </table>
+    </div>
+    
+    <button class="btn btn-red" style="margin-top: 20px; font-size: 0.7rem;" onclick="clearAll()">HAPUS SEMUA DATA</button>
 </div>
 
 <script>
-    // KONFIGURASI - PASTIKAN USERNAME BENAR (DENGAN HURUF 'N')
-    const GH_OWNER = "awalpradana804-crypto"; 
+    // --- KONFIGURASI REPO ANDA ---
+    const GH_OWNER = "awalpradana804-crypto"; // Pastikan ejaan benar
     const GH_REPO = "wal_generator";
     const GH_PATH = "keys.json";
 
     let keys = JSON.parse(localStorage.getItem('wal_keys')) || [];
+
+    // Tampilkan data saat pertama kali buka
     renderTable();
 
+    function saveToken() {
+        localStorage.setItem('gh_token', document.getElementById('gh-token').value);
+    }
+
+    document.getElementById('gh-token').value = localStorage.getItem('gh_token') || "";
+
     function createKey() {
-        let dur = prompt("Durasi (Hari):", "30");
-        if (dur) {
-            keys.push({ key: "WAL-"+Math.random().toString(36).substring(2,9).toUpperCase(), dur: parseInt(dur), tgl_raw: Date.now() });
-            save();
+        let durasi = prompt("Durasi Key (Hari):", "30");
+        if (durasi) {
+            let newKey = "WAL-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+            keys.push({ 
+                key: newKey, 
+                dur: parseInt(durasi), 
+                tgl: new Date().toLocaleDateString('id-ID'),
+                tgl_raw: Date.now() 
+            });
+            saveData();
+            alert("Berhasil Membuat Key: " + newKey);
         }
     }
 
-    function save() {
+    function deleteKey(index) {
+        if(confirm("Hapus key ini? Jangan lupa klik SINKRON setelah hapus.")) {
+            keys.splice(index, 1);
+            saveData();
+        }
+    }
+
+    function clearAll() {
+        if(confirm("HAPUS SEMUA DATA? Tindakan ini tidak bisa dibatalkan.")) {
+            keys = [];
+            saveData();
+        }
+    }
+
+    function saveData() {
         localStorage.setItem('wal_keys', JSON.stringify(keys));
         renderTable();
     }
 
     function renderTable() {
         const tbody = document.getElementById('key-table-body');
-        tbody.innerHTML = keys.map((k, i) => `<tr><td>${k.key}</td><td>${k.dur}d</td><td><button onclick="del(${i})">X</button></td></tr>`).join('');
+        tbody.innerHTML = "";
+        keys.forEach((item, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.key}</td>
+                    <td>${item.dur}d</td>
+                    <td><button class="del-btn" onclick="deleteKey(${index})">X</button></td>
+                </tr>
+            `;
+        });
     }
 
-    function del(i) { keys.splice(i, 1); save(); }
-
     async function autoSync() {
-        const token = document.getElementById('gh-token').value;
-        const status = document.getElementById('sync-status');
-        if(!token) return alert("Isi Token Dulu!");
-
-        status.innerText = "Menghubungkan...";
+        const token = localStorage.getItem('gh_token');
+        const statusDiv = document.getElementById('sync-status');
+        
+        if (!token) return alert("Masukkan GitHub Token dulu!");
+        
+        statusDiv.style.background = "#334155";
+        statusDiv.innerText = "Sedang Menghubungkan ke GitHub...";
+        
         try {
-            // Ambil data file untuk dapatkan SHA
-            const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`, {
-                headers: { "Authorization": `token ${token}` }
+            // 1. Ambil SHA file
+            const getRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`, {
+                headers: { "Authorization": `token ${token}`, "Cache-Control": "no-cache" }
             });
             
-            if(!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.message || "Gagal akses Repo");
-            }
+            if (!getRes.ok) throw new Error("Gagal mengambil info file. Cek Token/Username.");
+            
+            const fileData = await getRes.json();
+            const sha = fileData.sha;
 
-            const fileData = await res.json();
+            // 2. Kirim Data
             const content = btoa(JSON.stringify(keys, null, 2));
-
-            // Kirim update
             const putRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`, {
                 method: "PUT",
                 headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ message: "Update via Web", content: content, sha: fileData.sha })
+                body: JSON.stringify({
+                    message: "Update database via Admin Panel",
+                    content: content,
+                    sha: sha
+                })
             });
 
-            if(putRes.ok) {
-                status.innerText = "SUCCESS: Berhasil Sinkron!";
-                status.style.background = "green";
+            if (putRes.ok) {
+                statusDiv.style.background = "#16a34a";
+                statusDiv.innerText = "SUCCESS: GitHub Updated!";
+                alert("DATABASE BERHASIL DISINKRON!");
             } else {
-                throw new Error("Gagal Update file");
+                throw new Error("Gagal kirim data ke GitHub.");
             }
-        } catch (e) {
-            status.innerText = "ERROR: " + e.message;
-            status.style.background = "red";
-            console.error(e);
+        } catch (err) {
+            statusDiv.style.background = "#ef4444";
+            statusDiv.innerText = "ERROR: " + err.message;
+            alert(err.message);
         }
     }
 </script>
