@@ -3,237 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAL KEY GENERATOR V1.3</title>
+    <title>WAL AUTO-SYNC V2.0</title>
     <style>
-        :root {
-            --violet: #8b5cf6;
-            --cyan: #06b6d4;
-            --dark: #0f172a;
-            --white: #f8fafc;
-            --gold: #fbbf24;
-        }
-
-        body {
-            background-color: var(--dark);
-            color: var(--white);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-
-        .container {
-            width: 95%;
-            max-width: 500px;
-            background: #1e293b;
-            border: 2px solid var(--violet);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-            text-align: center;
-            box-sizing: border-box;
-        }
-
-        .banner {
-            border-bottom: 2px solid var(--violet);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-
-        .banner h1 { color: var(--violet); font-size: 1.5rem; margin: 0; }
-        .banner p { color: var(--cyan); font-size: 0.8rem; margin: 5px 0 0; }
-
-        .btn {
-            display: block; width: 100%; padding: 12px; margin: 10px 0;
-            border: none; border-radius: 8px; cursor: pointer;
-            font-weight: bold; transition: 0.3s; text-decoration: none; box-sizing: border-box;
-        }
-
-        .btn-violet { background: var(--violet); color: white; }
-        .btn-cyan { background: var(--cyan); color: white; }
-        .btn-red { background: #ef4444; color: white; }
-        .btn:hover { opacity: 0.8; transform: scale(1.02); }
-
+        :root { --violet: #8b5cf6; --cyan: #06b6d4; --dark: #0f172a; --white: #f8fafc; }
+        body { background: var(--dark); color: var(--white); font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { width: 95%; max-width: 500px; background: #1e293b; border: 2px solid var(--violet); border-radius: 15px; padding: 20px; text-align: center; }
+        .btn { display: block; width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; }
+        .btn-violet { background: var(--violet); }
+        .btn-cyan { background: var(--cyan); }
+        .btn-red { background: #ef4444; }
         .input-group { margin: 15px 0; text-align: left; }
-        input {
-            width: 100%; padding: 10px; margin-top: 5px;
-            background: #334155; border: 1px solid var(--violet);
-            color: white; border-radius: 5px; box-sizing: border-box;
-        }
-
+        input { width: 100%; padding: 10px; margin-top: 5px; background: #334155; border: 1px solid var(--violet); color: white; border-radius: 5px; box-sizing: border-box; }
         .hidden { display: none; }
-        .key-list {
-            text-align: left; background: #0f172a; padding: 10px;
-            border-radius: 5px; max-height: 200px; overflow-y: auto;
-            font-size: 0.8rem; margin: 10px 0; border: 1px solid var(--cyan);
-        }
-        .key-item {
-            border-bottom: 1px solid #334155; padding: 8px 0;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        textarea {
-            width: 100%; height: 80px; margin-top: 10px; 
-            background: #0f172a; color: #22c55e; border: 1px solid var(--cyan);
-            border-radius: 5px; font-family: monospace; font-size: 10px; padding: 5px;
-        }
+        .status { font-size: 0.8rem; margin: 10px 0; padding: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div class="container" id="main-menu">
-    <div class="banner">
-        <h1>WAL KEY GENERATOR</h1>
-        <p>V1.3 - Super Admin System</p>
-    </div>
-    <button class="btn btn-violet" onclick="handleAdminEntry()">ADMIN MENU</button>
-    <button class="btn btn-cyan" onclick="showPage('member-menu')">MEMBER MENU</button>
-</div>
-
-<div class="container hidden" id="admin-login">
-    <div class="banner"><h1>ADMIN LOGIN</h1></div>
+<div class="container" id="admin-panel">
+    <h2 style="color: var(--violet)">WAL AUTO-SYNC PANEL</h2>
+    <div id="sync-status" class="status" style="background: #334155;">Status: Ready</div>
+    
     <div class="input-group">
-        <label>Admin Key:</label>
-        <input type="text" id="admin-user" placeholder="WAL-APOCALYPSE-2026">
+        <label>GitHub Token (PASTE ONCE):</label>
+        <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" onchange="saveToken()">
     </div>
-    <button class="btn btn-violet" onclick="loginAdmin()">VERIFIKASI</button>
-    <button class="btn btn-red" onclick="showPage('main-menu')">KEMBALI</button>
-</div>
 
-<div class="container hidden" id="admin-panel">
-    <div class="banner">
-        <h1>ADMIN PANEL</h1>
-        <p id="admin-status" style="color: var(--gold); font-weight: bold;"></p>
-    </div>
     <button class="btn btn-violet" onclick="createKey()">CREATE NEW KEY</button>
-    <button class="btn btn-cyan" onclick="showKeyList()">LIST ALL KEYS</button>
-    <div id="display-list" class="key-list hidden"></div>
-    
-    <button class="btn btn-cyan" onclick="exportJSON()">SINKRON KE SERVER (COPY JSON)</button>
-    <textarea id="json-box" class="hidden" readonly></textarea>
-    
-    <button class="btn btn-cyan hidden" id="btn-add-admin" onclick="addAdmin()">ADD NEW ADMIN</button>
-    <button class="btn btn-red" onclick="logoutAdmin()">LOG OUT</button>
-</div>
-
-<div class="container hidden" id="member-menu">
-    <div class="banner"><h1>MEMBER MENU</h1></div>
-    <button class="btn btn-violet" onclick="claimFreeKey()">CLAIM FREE KEY (24H)</button>
-    <button class="btn btn-cyan" onclick="contactAdmin()">BUY KEY (WHATSAPP)</button>
-    <div id="claim-result" style="margin-top:10px; color: var(--gold); font-weight: bold;"></div>
-    <button class="btn btn-red" onclick="showPage('main-menu')">KEMBALI</button>
+    <button class="btn btn-cyan" onclick="autoSync()">SINKRON OTOMATIS KE GITHUB</button>
+    <button class="btn btn-red" onclick="location.reload()">REFRESH DATA</button>
 </div>
 
 <script>
-    const SUPER_ADMIN_KEY = "WAL-APOCALYPSE-2026";
-    let extraAdmins = JSON.parse(localStorage.getItem('wal_extra_admins')) || [];
+    // Konfigurasi Repo Anda
+    const GH_OWNER = "awalprada804-crypto";
+    const GH_REPO = "wal_generator";
+    const GH_PATH = "keys.json";
+
     let keys = JSON.parse(localStorage.getItem('wal_keys')) || [];
 
-    function showPage(id) {
-        document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
-        document.getElementById(id).classList.remove('hidden');
+    // Simpan token di browser agar tidak capek ketik ulang
+    function saveToken() {
+        localStorage.setItem('gh_token', document.getElementById('gh-token').value);
     }
 
-    function handleAdminEntry() {
-        let session = localStorage.getItem('wal_admin_session');
-        if (session === SUPER_ADMIN_KEY || extraAdmins.includes(session)) {
-            loadAdminPanel(session);
-        } else {
-            showPage('admin-login');
-        }
-    }
-
-    function loginAdmin() {
-        let user = document.getElementById('admin-user').value.trim();
-        if (user === SUPER_ADMIN_KEY || extraAdmins.includes(user)) {
-            localStorage.setItem('wal_admin_session', user);
-            loadAdminPanel(user);
-        } else {
-            alert('Akses Ditolak! Key Admin Salah.');
-        }
-    }
-
-    function loadAdminPanel(user) {
-        showPage('admin-panel');
-        document.getElementById('admin-status').innerText = (user === SUPER_ADMIN_KEY) ? "Logged as: SUPER ADMIN" : "Logged as: " + user;
-        if (user === SUPER_ADMIN_KEY) {
-            document.getElementById('btn-add-admin').classList.remove('hidden');
-        } else {
-            document.getElementById('btn-add-admin').classList.add('hidden');
-        }
-    }
+    document.getElementById('gh-token').value = localStorage.getItem('gh_token') || "";
 
     function createKey() {
-        let durasi = prompt("Masukkan Durasi Key (Hari):", "1");
-        if (durasi && !isNaN(durasi)) {
-            let newKey = "WAL-" + Math.random().toString(36).substring(2, 12).toUpperCase();
-            keys.push({ 
-                key: newKey, 
-                dur: parseInt(durasi), 
-                tgl: new Date().toLocaleString('id-ID'),
-                tgl_raw: Date.now() 
-            });
+        let durasi = prompt("Durasi (Hari):", "1");
+        if (durasi) {
+            let newKey = "WAL-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+            keys.push({ key: newKey, dur: parseInt(durasi), tgl_raw: Date.now() });
             localStorage.setItem('wal_keys', JSON.stringify(keys));
-            alert("Key Berhasil Dibuat: " + newKey);
-            showKeyList();
+            alert("Berhasil: " + newKey);
         }
     }
 
-    function showKeyList() {
-        let listDiv = document.getElementById('display-list');
-        listDiv.classList.remove('hidden');
-        listDiv.innerHTML = "<strong>KEY | DURASI | STATUS</strong><br>";
-        let now = Date.now();
-        keys.forEach((k, index) => {
-            let expiryTime = k.tgl_raw + (k.dur * 86400000);
-            let status = (now > expiryTime) ? "<span style='color:red'>EXPIRED</span>" : "<span style='color:#22c55e'>ACTIVE</span>";
-            listDiv.innerHTML += `
-                <div class="key-item">
-                    <span>${k.key}</span> 
-                    <span>${k.dur}D</span> 
-                    <span>${status}</span>
-                </div>`;
-        });
-    }
+    async function autoSync() {
+        const token = localStorage.getItem('gh_token');
+        const statusDiv = document.getElementById('sync-status');
+        
+        if (!token) return alert("Masukkan GitHub Token dulu!");
+        
+        statusDiv.innerText = "Connecting to GitHub...";
+        
+        try {
+            // 1. Ambil SHA file keys.json (Wajib untuk update GitHub)
+            const getRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`, {
+                headers: { "Authorization": `token ${token}` }
+            });
+            const fileData = await getRes.json();
+            const sha = fileData.sha;
 
-    function exportJSON() {
-        let jsonBox = document.getElementById('json-box');
-        jsonBox.classList.remove('hidden');
-        jsonBox.value = JSON.stringify(keys);
-        jsonBox.select();
-        document.execCommand('copy');
-        alert("DATA COPIED! Silakan tempel ke file keys.json di GitHub Anda.");
-    }
+            // 2. Kirim data baru
+            const content = btoa(JSON.stringify(keys, null, 2)); // Encode ke Base64
+            const putRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`, {
+                method: "PUT",
+                headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: "Auto-sync keys via Website",
+                    content: content,
+                    sha: sha
+                })
+            });
 
-    function addAdmin() {
-        let newAdm = prompt("Masukkan Key Admin Baru:");
-        if (newAdm && !extraAdmins.includes(newAdm)) {
-            extraAdmins.push(newAdm);
-            localStorage.setItem('wal_extra_admins', JSON.stringify(extraAdmins));
-            alert("Admin baru ditambahkan!");
+            if (putRes.ok) {
+                statusDiv.style.background = "#16a34a";
+                statusDiv.innerText = "SUCCESS: GitHub Updated!";
+                alert("SINKRON BERHASIL! Data di GitHub sudah terupdate.");
+            } else {
+                throw new Error("Failed to upload");
+            }
+        } catch (err) {
+            statusDiv.style.background = "#ef4444";
+            statusDiv.innerText = "ERROR: " + err.message;
+            alert("Gagal Sinkron! Cek Token atau Koneksi.");
         }
-    }
-
-    function logoutAdmin() {
-        localStorage.removeItem('wal_admin_session');
-        location.reload();
-    }
-
-    function claimFreeKey() {
-        let lastClaim = localStorage.getItem('last_claim');
-        let now = Date.now();
-        if (lastClaim && (now - lastClaim < 86400000)) {
-            alert("Anda sudah mengklaim hari ini!");
-        } else {
-            let freeKey = "FREE-" + Math.random().toString(36).substring(2, 10).toUpperCase();
-            localStorage.setItem('last_claim', now);
-            document.getElementById('claim-result').innerText = "Free Key (24H): " + freeKey;
-        }
-    }
-
-    function contactAdmin() {
-        window.open("https://wa.me/6283141093381?text=Bang%20beli%20key%20APOCALYPSE", "_blank");
     }
 </script>
 </body>
