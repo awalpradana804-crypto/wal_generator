@@ -1,1 +1,175 @@
-[]
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAL ADMIN PANEL PRO</title>
+    <style>
+        :root { --violet: #8b5cf6; --cyan: #06b6d4; --dark: #0f172a; --white: #f8fafc; --red: #ef4444; --green: #10b981; }
+        body { background: var(--dark); color: var(--white); font-family: sans-serif; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .container { width: 100%; max-width: 480px; background: #1e293b; border: 2px solid var(--violet); border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; text-transform: uppercase; font-size: 0.8rem; }
+        .btn-violet { background: var(--violet); }
+        .btn-cyan { background: var(--cyan); }
+        .btn-green { background: var(--green); }
+        input { width: 100%; padding: 12px; margin-top: 5px; background: #0f172a; border: 1px solid var(--violet); color: white; border-radius: 8px; box-sizing: border-box; }
+        .status { font-size: 0.8rem; margin: 10px 0; padding: 10px; border-radius: 8px; background: #334155; border-left: 4px solid var(--violet); }
+        .section-title { text-align: left; font-size: 0.9rem; color: var(--cyan); margin-top: 20px; border-bottom: 1px solid #334155; padding-bottom: 5px; }
+        table { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 0.75rem; }
+        th, td { border: 1px solid #334155; padding: 8px; text-align: left; }
+        th { background: rgba(139, 92, 246, 0.2); }
+        .del-btn { background: var(--red); border: none; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="color: var(--violet); margin-bottom: 5px;">WAL ADMIN PANEL</h2>
+    <div id="sync-status" class="status">Status: Ready to Sync</div>
+    
+    <div style="text-align: left; margin-bottom: 15px;">
+        <label style="font-size: 0.7rem;">GITHUB TOKEN:</label>
+        <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" onchange="saveConfig()">
+    </div>
+
+    <div class="section-title">MANAGEMENT KEY USER</div>
+    <button class="btn btn-violet" onclick="createKey()">+ CREATE NEW USER KEY</button>
+    
+    <div class="section-title">MANAGEMENT ADMIN</div>
+    <button class="btn btn-green" onclick="createAdmin()">+ CREATE NEW ADMIN</button>
+
+    <button class="btn btn-cyan" style="margin-top: 20px;" onclick="autoSync()">SINKRONISASI KE GITHUB</button>
+
+    <div class="section-title">LIST DATA</div>
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>TYPE</th>
+                    <th>KEY / NAME</th>
+                    <th>DUR</th>
+                    <th>AKSI</th>
+                </tr>
+            </thead>
+            <tbody id="data-table-body"></tbody>
+        </table>
+    </div>
+    
+    <button class="btn" style="background: #475569; font-size: 0.7rem; margin-top: 30px;" onclick="clearLocal()">RESET TAMPILAN WEB</button>
+</div>
+
+<script>
+    // --- KONFIGURASI ---
+    const GH_OWNER = "awalpradana804-crypto"; 
+    const GH_REPO = "wal_generator";
+    const KEY_PATH = "keys.json";
+    const ADMIN_PATH = "admins.json"; // File baru untuk daftar admin
+
+    let userKeys = JSON.parse(localStorage.getItem('wal_keys')) || [];
+    let adminKeys = JSON.parse(localStorage.getItem('wal_admins')) || [];
+
+    // Load Token
+    document.getElementById('gh-token').value = localStorage.getItem('gh_token') || "";
+
+    renderTable();
+
+    function saveConfig() {
+        localStorage.setItem('gh_token', document.getElementById('gh-token').value);
+    }
+
+    function createKey() {
+        let dur = prompt("Durasi Key User (Hari):", "30");
+        if (dur) {
+            let k = "WAL-" + Math.random().toString(36).substring(2, 9).toUpperCase();
+            userKeys.push({ key: k, dur: parseInt(dur), tgl_raw: Date.now(), type: 'USER' });
+            updateLocal();
+        }
+    }
+
+    function createAdmin() {
+        let name = prompt("Nama Admin / Key Admin Baru:");
+        if (name) {
+            adminKeys.push({ key: name, dur: 'PERMANENT', tgl_raw: Date.now(), type: 'ADMIN' });
+            updateLocal();
+        }
+    }
+
+    function delData(type, index) {
+        if(confirm("Hapus data ini?")) {
+            if(type === 'USER') userKeys.splice(index, 1);
+            else adminKeys.splice(index, 1);
+            updateLocal();
+        }
+    }
+
+    function updateLocal() {
+        localStorage.setItem('wal_keys', JSON.stringify(userKeys));
+        localStorage.setItem('wal_admins', JSON.stringify(adminKeys));
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('data-table-body');
+        tbody.innerHTML = "";
+        
+        // Render Admin
+        adminKeys.forEach((item, i) => {
+            tbody.innerHTML += `<tr><td><b style="color:var(--green)">ADM</b></td><td>${item.key}</td><td>∞</td><td><button class="del-btn" onclick="delData('ADMIN', ${i})">X</button></td></tr>`;
+        });
+        
+        // Render User
+        userKeys.forEach((item, i) => {
+            tbody.innerHTML += `<tr><td><b style="color:var(--violet)">USR</b></td><td>${item.key}</td><td>${item.dur}d</td><td><button class="del-btn" onclick="delData('USER', ${i})">X</button></td></tr>`;
+        });
+    }
+
+    async function uploadToGithub(path, data, token) {
+        // Ambil SHA
+        const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`, {
+            headers: { "Authorization": `token ${token}`, "Cache-Control": "no-cache" }
+        });
+        const fileData = await res.json();
+        const sha = fileData.sha;
+
+        // Upload
+        const content = btoa(JSON.stringify(data, null, 2));
+        return await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`, {
+            method: "PUT",
+            headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ message: "Update Database", content: content, sha: sha })
+        });
+    }
+
+    async function autoSync() {
+        const token = document.getElementById('gh-token').value;
+        const status = document.getElementById('sync-status');
+        if(!token) return alert("Masukkan GitHub Token!");
+
+        status.innerText = "Proses Sinkronisasi...";
+        status.style.background = "#334155";
+
+        try {
+            // Sinkron User Keys
+            await uploadToGithub(KEY_PATH, userKeys, token);
+            // Sinkron Admin Keys
+            await uploadToGithub(ADMIN_PATH, adminKeys, token);
+
+            status.innerText = "SUCCESS: Semua Data Terupdate!";
+            status.style.background = "var(--green)";
+            alert("Database User & Admin berhasil disinkronkan ke GitHub!");
+        } catch (e) {
+            status.innerText = "ERROR: Gagal Sinkron!";
+            status.style.background = "var(--red)";
+            console.error(e);
+        }
+    }
+
+    function clearLocal() {
+        if(confirm("Hanya mereset tampilan web, data di GitHub tetap aman. Lanjut?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+</script>
+</body>
+</html>
